@@ -1,13 +1,15 @@
 import re
+import json
 import time
 import queue
+import pickle
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 class myCrawler:
 
-    def __init__(self, seedURL, maxVideoLen = 60 * 4 + 30, minVideoLen = 30, maxFetch = 5, timeGap = 5, bulkSize = 64):
+    def __init__(self, seedURL, maxVideoLen = 60 * 4 + 30, minVideoLen = 30, maxFetch = 128, timeGap = 5, bulkSize = 64):
         
         self.maxVideoLen = maxVideoLen
         self.minVideoLen = minVideoLen
@@ -97,15 +99,33 @@ class myCrawler:
                 url_queue.put('https://www.youtube.com' + new_url.get('href'))
                 
         # write off the last batch
-        with open('../storage/records', 'w') as fp:
+        with open('../storage/records', 'a') as fp:
             for rec in bulkStream:
                 fp.write(rec)
         bulkStream.clear()
         driver.quit()
 
 if __name__ == "__main__":
-    seen_url = {}
-    url_queue = queue.Queue()
+
+    # seen_url = {}
+    # url_queue = queue.Queue()
+    try:
+        with open('../storage/save-seenPool', 'rb') as fp:
+            seen_url = pickle.load(fp)
+    # OSError | FileNotFoundError | No specification
+    except OSError:
+        seen_url = {}
+    
+    try:
+        with open('../storage/save-urlPool', 'rb') as fp:
+            qlist = pickle.load(fp)
+            url_queue = queue.Queue()
+            for ele in qlist:
+                url_queue.put(ele)
+    # OSError | FileNotFoundError | No specification
+    except OSError:
+        url_queue = queue.Queue()
+    
     test = myCrawler(seedURL = 'https://www.youtube.com/watch?v=gsGn1dzITD0')
     test.goCrawl(seen_url, url_queue)
 
@@ -116,3 +136,15 @@ if __name__ == "__main__":
     for i in list(url_queue.queue):
         print(i)
     """
+    # keep the seen pool in human language
+    """
+    with open('../storage/save-seenPool.json', 'w') as fp:
+        fp.write(json.dumps(seen_url))
+    """
+    # keep the seen url pool (which is a dict) in binary
+    with open('../storage/save-seenPool', 'wb') as fp:
+        pickle.dump(seen_url, fp, protocol=pickle.HIGHEST_PROTOCOL)
+    # keep the url pool (those in queue) in binary
+    # since queue.Queue() is for threading purposes, it will have problems with pickle
+    with open('../storage/save-urlPool', 'wb') as fp:
+        pickle.dump(list(url_queue.queue), fp)
