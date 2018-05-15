@@ -30,11 +30,15 @@ class myCrawler:
     
     def goCrawl(self, seen_url, url_queue):
         
-        # chrome_options = Options()
-        # chrome_options.add_argument("--headless")
-        # driver = webdriver.Chrome(executable_path='../package/chromedriver', chrome_options=chrome_options)
+        # run the chrome in the background
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        driver = webdriver.Chrome(executable_path='../package/chromedriver', chrome_options=chrome_options)
+
         # we can't just open a new tab since it's not thread safe
-        driver = webdriver.Chrome(executable_path = '../package/chromedriver')
+        # run the chrome in the front
+        # driver = webdriver.Chrome(executable_path = '../package/chromedriver')
+        
         # push seed url into url_queue
         url_queue.put(self.seed_url)
 
@@ -75,8 +79,9 @@ class myCrawler:
             pubtime = bsoup.select('#upload-info > span')[0].text
             # get owner of the video
             owner = bsoup.select('#owner-name > a')[0].text
+            # this will lead to some err since there might be some pages without the subscribe infos
             # get number of subscribe
-            subscribe = bsoup.select('#subscribe-button')[1].text
+            # subscribe = bsoup.select('#subscribe-button')[1].text
             outStream = '@url:' + cur_url + '\n' + \
                     '@@title:' + title + '\n' + \
                     '@vlen:' + vlen + '\n' + \
