@@ -83,14 +83,16 @@ class myCrawler:
             # get number of subscribe
             # subscribe = bsoup.select('#subscribe-button')[1].text
             outStream = '@url:' + cur_url + '\n' + \
-                    '@@title:' + title + '\n' + \
+                    '@title:' + title + '\n' + \
                     '@vlen:' + vlen + '\n' + \
                     '@cview:' + cview + '\n' + \
                     '@clike:' + clike + '\n' + \
                     '@chate:' + chate + '\n' + \
                     '@owner:' + owner + '\n' + \
-                    '@pubtime:' + pubtime + '\n' + \
-                    '@subscribe:' + subscribe + '\n\n'
+                    '@pubtime:' + pubtime + '\n\n'
+                    
+                    # decide not to extract this infos since not all vids have this attr
+                    # '@subscribe:' + subscribe + '\n\n'
 
             bulkStream.append(outStream)
             if(len(bulkStream) is self.bulkSize):

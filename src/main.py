@@ -10,7 +10,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 def baseCrawler(baseURL, seen_url, url_queue):
-    test = myCrawler(seedURL = baseURL, maxFetch = 1024)
+    test = myCrawler(seedURL = baseURL, maxFetch = 4096)
     test.goCrawl(seen_url, url_queue)
 
 if __name__ == "__main__":
