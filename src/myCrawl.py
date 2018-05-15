@@ -33,7 +33,7 @@ class myCrawler:
         # chrome_options = Options()
         # chrome_options.add_argument("--headless")
         # driver = webdriver.Chrome(executable_path='../package/chromedriver', chrome_options=chrome_options)
-
+        # we can't just open a new tab since it's not thread safe
         driver = webdriver.Chrome(executable_path = '../package/chromedriver')
         # push seed url into url_queue
         url_queue.put(self.seed_url)
@@ -48,6 +48,9 @@ class myCrawler:
                 continue
             # fetching
             driver.get(cur_url)
+            # label current url crawled, to escape long video
+            seen_url[cur_url] = True
+            print("[{0}]: {1}".format(numOfFetch, cur_url))
             # wait
             time.sleep(self.timeGap)
             # extract source code
@@ -60,9 +63,7 @@ class myCrawler:
                 print("Current video length doesn't fit the limitation, return 'escape'.")
                 continue
             numOfFetch += 1
-            # label current url crawled
-            seen_url[cur_url] = True
-            print("[{0}]: {1}".format(numOfFetch, cur_url))
+            
             # get video title
             title = bsoup.select('#container > h1 > yt-formatted-string')[0].text
             # get count of views
@@ -92,6 +93,7 @@ class myCrawler:
                     for rec in bulkStream:
                         fp.write(rec)
                 bulkStream.clear()
+                # save progress here ?
             
             # extract links
             all_url = bsoup.select('#dismissable > a')
@@ -126,7 +128,7 @@ if __name__ == "__main__":
     except OSError:
         url_queue = queue.Queue()
     
-    test = myCrawler(seedURL = 'https://www.youtube.com/watch?v=gsGn1dzITD0')
+    test = myCrawler(seedURL = 'https://www.youtube.com/watch?v=gsGn1dzITD0', maxFetch = 8192)
     test.goCrawl(seen_url, url_queue)
 
     """
