@@ -15,6 +15,7 @@ class myCrawler:
         self.minVideoLen = minVideoLen
         self.maxFetch = maxFetch
         self.timeGap = timeGap
+        # bulkSize is now inactive
         self.bulkSize = bulkSize
         self.seed_url = seedURL
     
@@ -43,7 +44,7 @@ class myCrawler:
         url_queue.put(self.seed_url)
 
         numOfFetch = 0
-        bulkStream = []
+        self.bulkStream = []
 
         while not url_queue.empty() and numOfFetch < self.maxFetch:
             cur_url = url_queue.get()
@@ -89,29 +90,34 @@ class myCrawler:
                     '@clike:' + clike + '\n' + \
                     '@chate:' + chate + '\n' + \
                     '@owner:' + owner + '\n' + \
-                    '@pubtime:' + pubtime + '\n\n'
+                    '@pubtime:' + pubtime + '\n'
                     
                     # decide not to extract this infos since not all vids have this attr
                     # '@subscribe:' + subscribe + '\n\n'
 
-            bulkStream.append(outStream)
+            self.bulkStream.append(outStream)
+            # Due to multi-thread, write the file when crawl is done to reduce the number of locks
+            """
             if(len(bulkStream) is self.bulkSize):
                 with open('../storage/records', 'a') as fp:
                     for rec in bulkStream:
                         fp.write(rec)
                 bulkStream.clear()
                 # save progress here ?
-            
+            """
             # extract links
             all_url = bsoup.select('#dismissable > a')
             for new_url in all_url:
                 url_queue.put('https://www.youtube.com' + new_url.get('href'))
                 
         # write off the last batch
+        # Due to multi-thread, write the file when crawl is done to reduce the number of locks
+        """
         with open('../storage/records', 'a') as fp:
             for rec in bulkStream:
                 fp.write(rec)
         bulkStream.clear()
+        """
         driver.quit()
 
 if __name__ == "__main__":

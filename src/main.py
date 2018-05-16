@@ -9,9 +9,19 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
+
+lock = threading.Lock()
+
+
 def baseCrawler(baseURL, seen_url, url_queue):
-    test = myCrawler(seedURL = baseURL, maxFetch = 4096)
+    test = myCrawler(seedURL = baseURL, maxFetch = 4096, minVideoLen = 120)
     test.goCrawl(seen_url, url_queue)
+    lock.acquire()
+    with open('../storage/records', 'a') as fp:
+        for rec in test.bulkStream:
+            fp.write(rec)
+    test.bulkStream.clear()
+    lock.release()
 
 if __name__ == "__main__":
 
@@ -39,8 +49,20 @@ if __name__ == "__main__":
              'https://www.youtube.com/watch?v=hT_nvWreIhg',
              'https://www.youtube.com/watch?v=SXjXKT98esw',
              'https://www.youtube.com/watch?v=kjMNXpqmjb4',
-             'https://www.youtube.com/watch?v=kVpv8-5XWOI'
+             'https://www.youtube.com/watch?v=kVpv8-5XWOI',
+             'https://www.youtube.com/watch?v=3ChgRbqGi-E',
+             'https://www.youtube.com/watch?v=DkeiKbqa02g',
+             'https://www.youtube.com/watch?v=vDSF07Rhfzw',
+             'https://www.youtube.com/watch?v=Vzo-EL_62fQ',
+             'https://www.youtube.com/watch?v=ZSM3w1v-A_Y',
+             'https://www.youtube.com/watch?v=cB5e0zHRzHc',
+             'https://www.youtube.com/watch?v=kWBE0sQC5L8'
             ]
+    # if there's no url in queue, the thread will return at the beginning
+    if url_queue.empty():
+        for url in ulist:
+            url_queue.put(url)
+    
     kthread = 6
     threadlist = []
     for i in range(kthread):
