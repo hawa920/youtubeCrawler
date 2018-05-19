@@ -9,16 +9,16 @@ from selenium.webdriver.chrome.options import Options
 
 class myCrawler:
 
-    def __init__(self, seedURL, maxVideoLen = 60 * 4 + 30, minVideoLen = 30, maxFetch = 128, timeGap = 5, bulkSize = 64):
-        
+    def __init__(self, maxVideoLen = 60 * 4 + 30, minVideoLen = 30, maxFetch = 128, timeGap = 5, bulkSize = 64):
+
         self.maxVideoLen = maxVideoLen
         self.minVideoLen = minVideoLen
         self.maxFetch = maxFetch
         self.timeGap = timeGap
         # bulkSize is now inactive
         self.bulkSize = bulkSize
-        self.seed_url = seedURL
-    
+        # self.seed_url = seedURL
+
     def lenInSec(self, vlen):
 
         secList = [1, 1 * 60, 1 * 60 * 60, 1 * 24 * 60 * 60]
@@ -28,9 +28,9 @@ class myCrawler:
         for i in range(len(tsplit) - 1, -1, -1):
             thisLen = thisLen + tsplit[i] * secList[len(tsplit) - i - 1]
         return True if thisLen < self.maxVideoLen and thisLen > self.minVideoLen else False
-    
+
     def goCrawl(self, seen_url, url_queue):
-        
+
         # run the chrome in the background
         chrome_options = Options()
         chrome_options.add_argument("--headless")
@@ -39,9 +39,9 @@ class myCrawler:
         # we can't just open a new tab since it's not thread safe
         # run the chrome in the front
         # driver = webdriver.Chrome(executable_path = '../package/chromedriver')
-        
+
         # push seed url into url_queue
-        url_queue.put(self.seed_url)
+        # url_queue.put(self.seed_url)
 
         numOfFetch = 0
         self.bulkStream = []
@@ -49,13 +49,13 @@ class myCrawler:
         while not url_queue.empty() and numOfFetch < self.maxFetch:
             cur_url = url_queue.get()
             if cur_url in seen_url:
-                print("Got some repeated url, return 'escape'.")
+                # print("Got some repeated url, return 'escape'.")
                 continue
             # fetching
             driver.get(cur_url)
             # label current url crawled, to escape long video
             seen_url[cur_url] = True
-            print("[{0}]: {1}".format(numOfFetch, cur_url))
+            
             # wait
             time.sleep(self.timeGap)
             # extract source code
@@ -63,26 +63,54 @@ class myCrawler:
             # init bs4
             bsoup = BeautifulSoup(srcode, 'html.parser')
             # get length of video
-            vlen = bsoup.select('#movie_player > div.ytp-chrome-bottom > div.ytp-chrome-controls > div.ytp-left-controls > div > span.ytp-time-duration')[0].text
+            try:
+                vlen = bsoup.select('#movie_player > div.ytp-chrome-bottom > div.ytp-chrome-controls > div.ytp-left-controls > div > span.ytp-time-duration')[0].text
+            except:
+                vlen = '0:00'
+          
             if not self.lenInSec(vlen):
-                print("Current video length doesn't fit the limitation, return 'escape'.")
+                # print("Current video length doesn't fit the limitation, return 'escape'.")
                 continue
-            numOfFetch += 1
             
+            # print("[{0}]: {1}".format(numOfFetch, cur_url))
+            numOfFetch += 1
+
             # get video title
-            title = bsoup.select('#container > h1 > yt-formatted-string')[0].text
-            # get count of views
-            cview = bsoup.select('#count > yt-view-count-renderer > span.view-count.style-scope.yt-view-count-renderer')[0].text
+            try:
+                title = bsoup.select('#container > h1 > yt-formatted-string')[0].text
+            except:
+                title = 'None'
+                # get count of views
+            try:
+                cview = bsoup.select('#count > yt-view-count-renderer > span.view-count.style-scope.yt-view-count-renderer')[0].text
+            except:
+                cview = 'None'
             # get number of likes and hates
-            clike = bsoup.select('#text')[1].text
-            chate = bsoup.select('#text')[2].text
+            try:
+                clike = bsoup.select('#text')[1].text
+                chate = bsoup.select('#text')[2].text
+            except:
+                clike = 'None'
+                chate = 'None'
+            
             # get publish date
-            pubtime = bsoup.select('#upload-info > span')[0].text
+            try:
+                pubtime = bsoup.select('#upload-info > span')[0].text
+            except:
+                pubtime = 'None'
             # get owner of the video
-            owner = bsoup.select('#owner-name > a')[0].text
-            # this will lead to some err since there might be some pages without the subscribe infos
+            try:
+                owner = bsoup.select('#owner-name > a')[0].text
+            except:
+                owner = 'None'
+           
             # get number of subscribe
-            # subscribe = bsoup.select('#subscribe-button')[1].text
+            try:
+                subscribe = bsoup.select('#subscribe-button')[1].text
+            except:
+                subscribe = 'None'
+               
+                                
             outStream = '@url:' + cur_url + '\n' + \
                     '@title:' + title + '\n' + \
                     '@vlen:' + vlen + '\n' + \
@@ -90,10 +118,8 @@ class myCrawler:
                     '@clike:' + clike + '\n' + \
                     '@chate:' + chate + '\n' + \
                     '@owner:' + owner + '\n' + \
-                    '@pubtime:' + pubtime + '\n'
-                    
-                    # decide not to extract this infos since not all vids have this attr
-                    # '@subscribe:' + subscribe + '\n\n'
+                    '@pubtime:' + pubtime + '\n' \
+                    '@subscribe:' + subscribe + '\n'
 
             self.bulkStream.append(outStream)
             # Due to multi-thread, write the file when crawl is done to reduce the number of locks
@@ -106,10 +132,13 @@ class myCrawler:
                 # save progress here ?
             """
             # extract links
-            all_url = bsoup.select('#dismissable > a')
-            for new_url in all_url:
-                url_queue.put('https://www.youtube.com' + new_url.get('href'))
-                
+            try:
+                all_url = bsoup.select('#dismissable > a')
+                for new_url in all_url:
+                    url_queue.put('https://www.youtube.com' + new_url.get('href'))
+            except:
+                continue
+           
         # write off the last batch
         # Due to multi-thread, write the file when crawl is done to reduce the number of locks
         """
@@ -130,27 +159,28 @@ if __name__ == "__main__":
     # OSError | FileNotFoundError | No specification
     except OSError:
         seen_url = {}
-    
+
     try:
         with open('../storage/save-urlPool', 'rb') as fp:
             qlist = pickle.load(fp)
             url_queue = queue.Queue()
+            if(url_queue.empty()):
+                raise Exception
             for ele in qlist:
                 url_queue.put(ele)
     # OSError | FileNotFoundError | No specification
-    except OSError:
+    except:
         url_queue = queue.Queue()
-    
-    test = myCrawler(seedURL = 'https://www.youtube.com/watch?v=gsGn1dzITD0', maxFetch = 8192)
+        url_queue.put('https://www.youtube.com/watch?v=eACohWVwTOc')
+
+    test = myCrawler(maxFetch = 5)
     test.goCrawl(seen_url, url_queue)
 
-    """
-    for i, j in seen_url.items():
-        print(i,' -> ', j)
+    with open('../storage/records', 'a') as fp:
+        for rec in test.bulkStream:
+            fp.write(rec)
+    
 
-    for i in list(url_queue.queue):
-        print(i)
-    """
     # keep the seen pool in human language
     """
     with open('../storage/save-seenPool.json', 'w') as fp:
@@ -163,3 +193,4 @@ if __name__ == "__main__":
     # since queue.Queue() is for threading purposes, it will have problems with pickle
     with open('../storage/save-urlPool', 'wb') as fp:
         pickle.dump(list(url_queue.queue), fp)
+

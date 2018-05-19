@@ -13,8 +13,8 @@ from selenium.webdriver.chrome.options import Options
 lock = threading.Lock()
 
 
-def baseCrawler(baseURL, seen_url, url_queue):
-    test = myCrawler(seedURL = baseURL, maxFetch = 4096, minVideoLen = 120)
+def baseCrawler(seen_url, url_queue):
+    test = myCrawler(maxFetch = 1, minVideoLen = 120)
     test.goCrawl(seen_url, url_queue)
     lock.acquire()
     with open('../storage/records', 'a') as fp:
@@ -24,6 +24,7 @@ def baseCrawler(baseURL, seen_url, url_queue):
     lock.release()
 
 if __name__ == "__main__":
+    
 
     try:
         with open('../storage/save-seenPool', 'rb') as fp:
@@ -31,16 +32,7 @@ if __name__ == "__main__":
     except OSError:
         seen_url = {}
 
-    try:
-        with open('../storage/save-urlPool', 'rb') as fp:
-            qlist = pickle.load(fp)
-            url_queue = queue.Queue()
-            for ele in qlist:
-                url_queue.put(ele)
-    except OSError:
-        url_queue = queue.Queue()
-
-    ulist = ['https://www.youtube.com/watch?v=r-d5HI-zC3I', 
+    ulist = ['https://www.youtube.com/watch?v=r-d5HI-zC3I',
              'https://www.youtube.com/watch?v=cIriwVhRPVA',
              'https://www.youtube.com/watch?v=tk36ovCMsU8',
              'https://www.youtube.com/watch?v=Mke9EHMQMYI',
@@ -58,15 +50,25 @@ if __name__ == "__main__":
              'https://www.youtube.com/watch?v=cB5e0zHRzHc',
              'https://www.youtube.com/watch?v=kWBE0sQC5L8'
             ]
-    # if there's no url in queue, the thread will return at the beginning
-    if url_queue.empty():
+
+    try:
+        with open('../storage/save-urlPool', 'rb') as fp:
+            qlist = pickle.load(fp)
+            url_queue = queue.Queue()
+            if url_queue.empty():
+                raise Exception
+            for ele in qlist:
+                url_queue.put(ele)
+    except:
+        url_queue = queue.Queue()
         for url in ulist:
             url_queue.put(url)
-    
+
+
     kthread = 6
     threadlist = []
     for i in range(kthread):
-        t = threading.Thread(target=baseCrawler, args=(ulist[i], seen_url, url_queue))
+        t = threading.Thread(target=baseCrawler, args=(seen_url, url_queue))
         t.daemon = True
         threadlist.append(t)
         t.start()
