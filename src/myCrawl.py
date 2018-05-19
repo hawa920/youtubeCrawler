@@ -49,7 +49,7 @@ class myCrawler:
         while not url_queue.empty() and numOfFetch < self.maxFetch:
             cur_url = url_queue.get()
             if cur_url in seen_url:
-                # print("Got some repeated url, return 'escape'.")
+                print("Got some repeated url, return 'escape'.")
                 continue
             # fetching
             driver.get(cur_url)
@@ -69,10 +69,10 @@ class myCrawler:
                 vlen = '0:00'
           
             if not self.lenInSec(vlen):
-                # print("Current video length doesn't fit the limitation, return 'escape'.")
+                print("Current video length doesn't fit the limitation, return 'escape'.")
                 continue
             
-            # print("[{0}]: {1}".format(numOfFetch, cur_url))
+            print("[{0}]: {1}".format(numOfFetch, cur_url))
             numOfFetch += 1
 
             # get video title
@@ -164,7 +164,7 @@ if __name__ == "__main__":
         with open('../storage/save-urlPool', 'rb') as fp:
             qlist = pickle.load(fp)
             url_queue = queue.Queue()
-            if(url_queue.empty()):
+            if len(qlist) is 0:
                 raise Exception
             for ele in qlist:
                 url_queue.put(ele)

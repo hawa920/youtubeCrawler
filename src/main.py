@@ -14,7 +14,7 @@ lock = threading.Lock()
 
 
 def baseCrawler(seen_url, url_queue):
-    test = myCrawler(maxFetch = 1, minVideoLen = 120)
+    test = myCrawler(maxFetch = 512, minVideoLen = 120)
     test.goCrawl(seen_url, url_queue)
     lock.acquire()
     with open('../storage/records', 'a') as fp:
@@ -32,30 +32,13 @@ if __name__ == "__main__":
     except OSError:
         seen_url = {}
 
-    ulist = ['https://www.youtube.com/watch?v=r-d5HI-zC3I',
-             'https://www.youtube.com/watch?v=cIriwVhRPVA',
-             'https://www.youtube.com/watch?v=tk36ovCMsU8',
-             'https://www.youtube.com/watch?v=Mke9EHMQMYI',
-             'https://www.youtube.com/watch?v=a7SouU3ECpU',
-             'https://www.youtube.com/watch?v=EkHTsc9PU2A',
-             'https://www.youtube.com/watch?v=hT_nvWreIhg',
-             'https://www.youtube.com/watch?v=SXjXKT98esw',
-             'https://www.youtube.com/watch?v=kjMNXpqmjb4',
-             'https://www.youtube.com/watch?v=kVpv8-5XWOI',
-             'https://www.youtube.com/watch?v=3ChgRbqGi-E',
-             'https://www.youtube.com/watch?v=DkeiKbqa02g',
-             'https://www.youtube.com/watch?v=vDSF07Rhfzw',
-             'https://www.youtube.com/watch?v=Vzo-EL_62fQ',
-             'https://www.youtube.com/watch?v=ZSM3w1v-A_Y',
-             'https://www.youtube.com/watch?v=cB5e0zHRzHc',
-             'https://www.youtube.com/watch?v=kWBE0sQC5L8'
-            ]
+    ulist = [ 'https://www.youtube.com/watch?v=pD-2VsWaJo0']
 
     try:
         with open('../storage/save-urlPool', 'rb') as fp:
             qlist = pickle.load(fp)
             url_queue = queue.Queue()
-            if url_queue.empty():
+            if len(qlist) is 0:
                 raise Exception
             for ele in qlist:
                 url_queue.put(ele)
@@ -65,7 +48,7 @@ if __name__ == "__main__":
             url_queue.put(url)
 
 
-    kthread = 6
+    kthread = 2
     threadlist = []
     for i in range(kthread):
         t = threading.Thread(target=baseCrawler, args=(seen_url, url_queue))
