@@ -14,7 +14,7 @@ lock = threading.Lock()
 
 
 def baseCrawler(seen_url, url_queue):
-    test = myCrawler(maxFetch = 512, minVideoLen = 120)
+    test = myCrawler(maxFetch = 1024, minVideoLen = 120)
     test.goCrawl(seen_url, url_queue)
     lock.acquire()
     with open('../storage/records', 'a') as fp:
@@ -24,7 +24,7 @@ def baseCrawler(seen_url, url_queue):
     lock.release()
 
 if __name__ == "__main__":
-    
+
 
     try:
         with open('../storage/save-seenPool', 'rb') as fp:
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             url_queue.put(url)
 
 
-    kthread = 2
+    kthread = 8
     threadlist = []
     for i in range(kthread):
         t = threading.Thread(target=baseCrawler, args=(seen_url, url_queue))
