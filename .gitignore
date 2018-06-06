@@ -1,2 +1,3 @@
-storage
+storage/save-seenPool
+storage/save-urlPool
 src/__pycache__
